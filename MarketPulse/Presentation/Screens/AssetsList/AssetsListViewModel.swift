@@ -20,6 +20,7 @@ final class AssetsListViewModel {
 	// MARK: - Properties
 
 	private let fetchAssetsUseCase: FetchAssetsUseCase
+	private var isLoading = false
 
 	var onStateChanged: ((State) -> Void)?
 
@@ -32,16 +33,20 @@ final class AssetsListViewModel {
 	// MARK: - Actions
 
 	func loadAssets() {
+		guard !isLoading else { return }
+		isLoading = true
 		onStateChanged?(.loading)
 
 		Task {
 			do {
 				let assets = try await fetchAssetsUseCase.execute()
 				await MainActor.run {
+					self.isLoading = false
 					onStateChanged?(.loaded(assets))
 				}
 			} catch {
 				await MainActor.run {
+					self.isLoading = false
 					onStateChanged?(.error(error.localizedDescription))
 				}
 			}

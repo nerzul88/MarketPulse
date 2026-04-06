@@ -11,7 +11,8 @@ final class AssetsListViewController: UIViewController {
 
 	private let viewModel: AssetsListViewModel
 	private let tableView = UITableView()
-	private let cellIdentifier = "AssetCell"
+	private let activityIndicator = UIActivityIndicatorView(style: .large)
+	private let refreshControl = UIRefreshControl()
 	private var assets: [Asset] = []
 
 	// MARK: - Init
@@ -40,11 +41,28 @@ final class AssetsListViewController: UIViewController {
 		title = "Market"
 		view.backgroundColor = .systemBackground
 
-//		tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellIdentifier)
 		tableView.dataSource = self
-		view.addSubview(tableView)
+		tableView.rowHeight = 72
+		tableView.register(AssetTableViewCell.self, forCellReuseIdentifier: AssetTableViewCell.reuseIdentifier)
 
-		tableView.frame = view.bounds
+		refreshControl.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
+		tableView.refreshControl = refreshControl
+
+		view.addSubview(tableView)
+		view.addSubview(activityIndicator)
+
+		tableView.translatesAutoresizingMaskIntoConstraints = false
+		activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+
+		NSLayoutConstraint.activate([
+			tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+			tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+			tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+			activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+		])
 	}
 
 	private func bindViewModel() {
@@ -56,13 +74,37 @@ final class AssetsListViewController: UIViewController {
 	private func handle(state: AssetsListViewModel.State) {
 		switch state {
 		case .loading:
-			print("Loading...")
+			if assets.isEmpty {
+				activityIndicator.startAnimating()
+			}
 		case .loaded(let assets):
+			activityIndicator.stopAnimating()
+			refreshControl.endRefreshing()
 			self.assets = assets
 			tableView.reloadData()
 		case .error(let message):
-			print("Error: \(message)")
+			activityIndicator.stopAnimating()
+			refreshControl.endRefreshing()
+			showErrorAlert(message: message)
 		}
+	}
+
+	private func showErrorAlert(message: String) {
+		guard presentedViewController == nil else { return }
+
+		let alert = UIAlertController(
+			title: "Something went wrong",
+			message: message,
+			preferredStyle: .alert
+		)
+
+		alert.addAction(UIAlertAction(title: "OK", style: .default))
+		present(alert, animated: true)
+	}
+
+	@objc
+	private func didPullToRefresh() {
+		viewModel.loadAssets()
 	}
 }
 
@@ -76,13 +118,15 @@ extension AssetsListViewController: UITableViewDataSource {
 
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
-		let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier)
-		?? UITableViewCell(style: .subtitle, reuseIdentifier: cellIdentifier)
+		guard let cell = tableView.dequeueReusableCell(
+			withIdentifier: AssetTableViewCell.reuseIdentifier,
+			for: indexPath
+		) as? AssetTableViewCell else {
+			return UITableViewCell()
+		}
+
 		let asset = assets[indexPath.row]
-
-		cell.textLabel?.text = "\(asset.symbol) - \(asset.price)"
-		cell.detailTextLabel?.text = "24h: \(asset.change24h)"
-
+		cell.configure(with: asset)
 		return cell
 	}
 }
