@@ -21,4 +21,19 @@ enum AssetsEndpoint {
 			]
 		)
 	}
+
+	static func detail(id: String) -> Endpoint {
+		Endpoint(
+			path: "/coins/\(id)",
+			method: .get,
+			queryItems: [
+				URLQueryItem(name: "localization", value: "false"),
+				URLQueryItem(name: "tickers", value: "false"),
+				URLQueryItem(name: "market_data", value: "true"),
+				URLQueryItem(name: "community_data", value: "false"),
+				URLQueryItem(name: "developer_data", value: "false"),
+				URLQueryItem(name: "sparkline", value: "false")
+			]
+		)
+	}
 }

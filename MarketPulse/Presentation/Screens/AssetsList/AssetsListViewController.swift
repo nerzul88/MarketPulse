@@ -41,6 +41,7 @@ final class AssetsListViewController: UIViewController {
 		title = "Market"
 		view.backgroundColor = .systemBackground
 
+		tableView.delegate = self
 		tableView.dataSource = self
 		tableView.rowHeight = 72
 		tableView.register(AssetTableViewCell.self, forCellReuseIdentifier: AssetTableViewCell.reuseIdentifier)
@@ -128,5 +129,20 @@ extension AssetsListViewController: UITableViewDataSource {
 		let asset = assets[indexPath.row]
 		cell.configure(with: asset)
 		return cell
+	}
+}
+
+// MARK: - UITableViewDelegate
+
+extension AssetsListViewController: UITableViewDelegate {
+	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+		let asset = assets[indexPath.row]
+
+		let repository = AssetRepository(networkClient: NetworkClient())
+		let useCase = FetchAssetDetailUseCase(repository: repository)
+		let viewModel = AssetDetailViewModel(assetID: asset.id, fetchAssetDetailUseCase: useCase)
+		let viewController = AssetDetailViewController(viewModel: viewModel)
+
+		navigationController?.pushViewController(viewController, animated: true)
 	}
 }
