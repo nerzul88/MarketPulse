@@ -8,13 +8,15 @@
 import Foundation
 
 extension AssetDTO {
-	func toDomain() -> Asset {
-		Asset(
+	func toDomain() -> Asset? {
+		guard let currentPrice else { return nil }
+
+		return Asset(
 			id: id,
 			name: name,
 			symbol: symbol.uppercased(),
-			price: currentPrice ?? 0,
-			change24h: priceChangePercentage24H
+			price: currentPrice,
+			change24h: priceChangePercentage24H ?? 0
 		)
 	}
 }

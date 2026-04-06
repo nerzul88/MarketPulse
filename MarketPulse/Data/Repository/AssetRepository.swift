@@ -17,6 +17,6 @@ final class AssetRepository: AssetRepositoryProtocol {
 
 	func fetchAssets() async throws -> [Asset] {
 		let dtos: [AssetDTO] = try await networkClient.request(AssetsEndpoint.markets())
-		return dtos.map { $0.toDomain() }
+		return dtos.compactMap { $0.toDomain() }
 	}
 }
