@@ -13,7 +13,7 @@ extension AssetDTO {
 			id: id,
 			name: name,
 			symbol: symbol.uppercased(),
-			price: currentPrice,
+			price: currentPrice ?? 0,
 			change24h: priceChangePercentage24H
 		)
 	}

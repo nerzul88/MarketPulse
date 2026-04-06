@@ -12,5 +12,5 @@ struct Asset: Equatable {
 	let name: String
 	let symbol: String
 	let price: Double
-	let change24h: Double
+	let change24h: Double?
 }

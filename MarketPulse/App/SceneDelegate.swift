@@ -25,6 +25,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 		window.rootViewController = UINavigationController(rootViewController: rootViewController)
 		window.makeKeyAndVisible()
 		self.window = window
+
+		// Checking network
+		let networkClient = NetworkClient()
+		let repository = AssetRepository(networkClient: networkClient)
+
+		Task {
+			do {
+				let assets = try await repository.fetchAssets()
+				print("Loaded assets count: \(assets.count)")
+				print(assets.prefix(3))
+			} catch {
+				print("Repository error: \(error)")
+			}
+		}
 	}
 
 	func sceneDidDisconnect(_ scene: UIScene) {
