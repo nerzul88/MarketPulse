@@ -10,8 +10,17 @@ import UIKit
 final class AssetsListViewController: UIViewController {
 
 	private let viewModel: AssetsListViewModel
-	private let tableView = UITableView()
-	private let activityIndicator = UIActivityIndicatorView(style: .large)
+	private let tableView: UITableView = {
+		let tableView = UITableView()
+		tableView.translatesAutoresizingMaskIntoConstraints = false
+		tableView.rowHeight = 72
+		return tableView
+	}()
+	private let activityIndicator: UIActivityIndicatorView = {
+		let indicator = UIActivityIndicatorView(style: .large)
+		indicator.translatesAutoresizingMaskIntoConstraints = false
+		return indicator
+	}()
 	private let refreshControl = UIRefreshControl()
 	private var assets: [Asset] = []
 
@@ -43,7 +52,6 @@ final class AssetsListViewController: UIViewController {
 
 		tableView.delegate = self
 		tableView.dataSource = self
-		tableView.rowHeight = 72
 		tableView.register(AssetTableViewCell.self, forCellReuseIdentifier: AssetTableViewCell.reuseIdentifier)
 
 		refreshControl.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
@@ -51,9 +59,6 @@ final class AssetsListViewController: UIViewController {
 
 		view.addSubview(tableView)
 		view.addSubview(activityIndicator)
-
-		tableView.translatesAutoresizingMaskIntoConstraints = false
-		activityIndicator.translatesAutoresizingMaskIntoConstraints = false
 
 		NSLayoutConstraint.activate([
 			tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
