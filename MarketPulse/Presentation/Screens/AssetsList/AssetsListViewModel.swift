@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 final class AssetsListViewModel {
 
 	// MARK: - State
@@ -14,6 +15,7 @@ final class AssetsListViewModel {
 	enum State {
 		case loading
 		case loaded([Asset])
+		case empty
 		case error(String)
 	}
 
@@ -21,6 +23,9 @@ final class AssetsListViewModel {
 
 	private let fetchAssetsUseCase: FetchAssetsUseCase
 	private var isLoading = false
+	private var allAssets: [Asset] = []
+	private var searchTask: Task<Void, Never>?
+	private var currentQuery: String = ""
 
 	var onStateChanged: ((State) -> Void)?
 
@@ -42,14 +47,47 @@ final class AssetsListViewModel {
 				let assets = try await fetchAssetsUseCase.execute()
 				await MainActor.run {
 					self.isLoading = false
-					onStateChanged?(.loaded(assets))
+					self.allAssets = assets
+					emitFilteredAssets()
 				}
 			} catch {
 				await MainActor.run {
 					self.isLoading = false
-					onStateChanged?(.error(error.localizedDescription))
+					self.onStateChanged?(.error(error.localizedDescription))
 				}
 			}
 		}
+	}
+
+	func search(query: String) {
+		searchTask?.cancel()
+
+		let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+		currentQuery = trimmedQuery
+
+		searchTask = Task {
+			try? await Task.sleep(nanoseconds: 400_000_000)
+
+			guard !Task.isCancelled else { return }
+
+			await MainActor.run {
+				self.emitFilteredAssets()
+			}
+		}
+	}
+
+	private func emitFilteredAssets() {
+		let filteredAssets: [Asset]
+
+		if currentQuery.isEmpty {
+			filteredAssets = allAssets
+		} else {
+			filteredAssets = allAssets.filter {
+				$0.name.localizedCaseInsensitiveContains(currentQuery) ||
+				$0.symbol.localizedCaseInsensitiveContains(currentQuery)
+			}
+		}
+
+		onStateChanged?(filteredAssets.isEmpty ? .empty : .loaded(filteredAssets))
 	}
 }

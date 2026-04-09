@@ -22,6 +22,21 @@ final class AssetsListViewController: UIViewController {
 		return indicator
 	}()
 	private let refreshControl = UIRefreshControl()
+	private let emptyStateLabel: UILabel = {
+		let label = UILabel()
+		label.translatesAutoresizingMaskIntoConstraints = false
+		label.text = "No assets found"
+		label.textAlignment = .center
+		label.textColor = .secondaryLabel
+		label.isHidden = true
+		return label
+	}()
+	private let searchController: UISearchController = {
+		let searchController = UISearchController(searchResultsController: nil)
+		searchController.obscuresBackgroundDuringPresentation = false
+		searchController.searchBar.placeholder = "Search by name or symbol"
+		return searchController
+	}()
 	private var assets: [Asset] = []
 
 	// MARK: - Init
@@ -57,8 +72,14 @@ final class AssetsListViewController: UIViewController {
 		refreshControl.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
 		tableView.refreshControl = refreshControl
 
+		searchController.searchResultsUpdater = self
+		navigationItem.searchController = searchController
+		navigationItem.hidesSearchBarWhenScrolling = false
+		definesPresentationContext = true
+
 		view.addSubview(tableView)
 		view.addSubview(activityIndicator)
+		view.addSubview(emptyStateLabel)
 
 		NSLayoutConstraint.activate([
 			tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
@@ -67,7 +88,10 @@ final class AssetsListViewController: UIViewController {
 			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
 			activityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-			activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+			activityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+
+			emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor)
 		])
 	}
 
@@ -80,14 +104,24 @@ final class AssetsListViewController: UIViewController {
 	private func handle(state: AssetsListViewModel.State) {
 		switch state {
 		case .loading:
+			emptyStateLabel.isHidden = true
 			if assets.isEmpty {
 				activityIndicator.startAnimating()
 			}
 		case .loaded(let assets):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
+			emptyStateLabel.isHidden = true
+			tableView.isHidden = false
 			self.assets = assets
 			tableView.reloadData()
+		case .empty:
+			activityIndicator.stopAnimating()
+			refreshControl.endRefreshing()
+			assets = []
+			tableView.reloadData()
+			tableView.isHidden = true
+			emptyStateLabel.isHidden = false
 		case .error(let message):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
@@ -149,5 +183,14 @@ extension AssetsListViewController: UITableViewDelegate {
 		let viewController = AssetDetailViewController(viewModel: viewModel)
 
 		navigationController?.pushViewController(viewController, animated: true)
+	}
+}
+
+// MARK: - UISearchResultsUpdating
+
+extension AssetsListViewController: UISearchResultsUpdating {
+	func updateSearchResults(for searchController: UISearchController) {
+		let query = searchController.searchBar.text ?? ""
+		viewModel.search(query: query)
 	}
 }
