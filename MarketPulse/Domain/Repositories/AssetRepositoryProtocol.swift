@@ -6,6 +6,6 @@
 //
 
 protocol AssetRepositoryProtocol {
-	func fetchAssets() async throws -> [Asset]
+	func fetchAssets() async throws -> AssetsResponse
 	func fetchAssetDetail(id: String) async throws -> AssetDetail
 }

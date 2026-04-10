@@ -37,6 +37,15 @@ final class AssetsListViewController: UIViewController {
 		searchController.searchBar.placeholder = "Search by name or symbol"
 		return searchController
 	}()
+	private let statusLabel: UILabel = {
+		let label = UILabel()
+		label.font = .systemFont(ofSize: 13)
+		label.textColor = .secondaryLabel
+		label.textAlignment = .center
+		label.numberOfLines = 0
+		label.isHidden = true
+		return label
+	}()
 	private var assets: [Asset] = []
 
 	// MARK: - Init
@@ -80,9 +89,14 @@ final class AssetsListViewController: UIViewController {
 		view.addSubview(tableView)
 		view.addSubview(activityIndicator)
 		view.addSubview(emptyStateLabel)
+		view.addSubview(statusLabel)
 
 		NSLayoutConstraint.activate([
-			tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+			statusLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+			statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+			statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+			tableView.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 8),
 			tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
 			tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -105,16 +119,21 @@ final class AssetsListViewController: UIViewController {
 		switch state {
 		case .loading:
 			emptyStateLabel.isHidden = true
+			statusLabel.isHidden = true
+
 			if assets.isEmpty {
 				activityIndicator.startAnimating()
 			}
-		case .loaded(let assets):
+
+		case .loaded(let assets, let lastUpdated, let isFromCache):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
 			emptyStateLabel.isHidden = true
 			tableView.isHidden = false
 			self.assets = assets
 			tableView.reloadData()
+			updateStatusLabel(lastUpdated: lastUpdated, isFromCache: isFromCache)
+
 		case .empty:
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
@@ -122,11 +141,29 @@ final class AssetsListViewController: UIViewController {
 			tableView.reloadData()
 			tableView.isHidden = true
 			emptyStateLabel.isHidden = false
+			statusLabel.isHidden = true
+
 		case .error(let message):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
 			showErrorAlert(message: message)
+			statusLabel.isHidden = assets.isEmpty
 		}
+	}
+
+	private func updateStatusLabel(lastUpdated: Date?, isFromCache: Bool) {
+		guard let lastUpdated else {
+			statusLabel.isHidden = true
+			return
+		}
+
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
+
+		let sourceText = isFromCache ? "Showing cached data" : "Updated"
+		statusLabel.text = "\(sourceText): \(formatter.string(from: lastUpdated))"
+		statusLabel.isHidden = false
 	}
 
 	private func showErrorAlert(message: String) {

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BDB9123D2F892C5100513A89 /* MarketPulseModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = BDB9123B2F892C5100513A89 /* MarketPulseModel.xcdatamodeld */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		BD39B3B42F7023F600270972 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -19,6 +23,7 @@
 /* Begin PBXFileReference section */
 		BD39B2FE2F700CEC00270972 /* MarketPulse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarketPulse.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD39B3B02F7023F600270972 /* MarketPulseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarketPulseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BDB9123C2F892C5100513A89 /* MarketPulseModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = MarketPulseModel.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -86,6 +91,7 @@
 		BD39B2F52F700CEC00270972 = {
 			isa = PBXGroup;
 			children = (
+				BDB9123B2F892C5100513A89 /* MarketPulseModel.xcdatamodeld */,
 				BD39B3002F700CEC00270972 /* MarketPulse */,
 				BD39B3B12F7023F600270972 /* MarketPulseTests */,
 				BD39B2FF2F700CEC00270972 /* Products */,
@@ -210,6 +216,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BDB9123D2F892C5100513A89 /* MarketPulseModel.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -499,6 +506,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		BDB9123B2F892C5100513A89 /* MarketPulseModel.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				BDB9123C2F892C5100513A89 /* MarketPulseModel.xcdatamodel */,
+			);
+			currentVersion = BDB9123C2F892C5100513A89 /* MarketPulseModel.xcdatamodel */;
+			path = MarketPulseModel.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = BD39B2F62F700CEC00270972 /* Project object */;
 }

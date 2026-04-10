@@ -15,7 +15,7 @@ final class FetchAssetsUseCase {
 		self.repository = repository
 	}
 
-	func execute() async throws -> [Asset] {
+	func execute() async throws -> AssetsResponse {
 		try await repository.fetchAssets()
 	}
 }

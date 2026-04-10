@@ -10,14 +10,44 @@ import Foundation
 final class AssetRepository: AssetRepositoryProtocol {
 
 	private let networkClient: NetworkClientProtocol
+	private let localStorage: AssetsLocalStorageProtocol
 
-	init(networkClient: NetworkClientProtocol) {
+	init(
+		networkClient: NetworkClientProtocol,
+		localStorage: AssetsLocalStorageProtocol = AssetsLocalStorage()
+	) {
 		self.networkClient = networkClient
+		self.localStorage = localStorage
 	}
 
-	func fetchAssets() async throws -> [Asset] {
-		let dtos: [AssetDTO] = try await networkClient.request(AssetsEndpoint.markets())
-		return dtos.compactMap { $0.toDomain() }
+	func fetchAssets() async throws -> AssetsResponse {
+		do {
+			let dtos: [AssetDTO] = try await networkClient.request(AssetsEndpoint.markets())
+			let assets = dtos.compactMap { $0.toDomain() }
+
+			do {
+				try localStorage.saveAssets(assets)
+			} catch {
+				print("Failed to cache assets: \(error)")
+			}
+
+			return AssetsResponse(
+				assets: assets,
+				lastUpdated: Date(),
+				isFromCache: false
+			)
+		} catch {
+			do {
+				let cached = try localStorage.fetchAssets()
+				return AssetsResponse(
+					assets: cached.assets,
+					lastUpdated: cached.lastUpdated,
+					isFromCache: true
+				)
+			} catch {
+				throw error
+			}
+		}
 	}
 
 	func fetchAssetDetail(id: String) async throws -> AssetDetail {

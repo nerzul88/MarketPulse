@@ -14,7 +14,7 @@ final class AssetsListViewModel {
 
 	enum State {
 		case loading
-		case loaded([Asset])
+		case loaded([Asset], lastUpdated: Date?, isFromCache: Bool)
 		case empty
 		case error(String)
 	}
@@ -26,6 +26,8 @@ final class AssetsListViewModel {
 	private var allAssets: [Asset] = []
 	private var searchTask: Task<Void, Never>?
 	private var currentQuery: String = ""
+	private var lastUpdated: Date?
+	private var isShowingCachedData = false
 
 	var onStateChanged: ((State) -> Void)?
 
@@ -44,17 +46,15 @@ final class AssetsListViewModel {
 
 		Task {
 			do {
-				let assets = try await fetchAssetsUseCase.execute()
-				await MainActor.run {
-					self.isLoading = false
-					self.allAssets = assets
-					emitFilteredAssets()
-				}
+				let response = try await fetchAssetsUseCase.execute()
+				self.allAssets = response.assets
+				self.lastUpdated = response.lastUpdated
+				self.isShowingCachedData = response.isFromCache
+				self.isLoading = false
+				emitFilteredAssets()
 			} catch {
-				await MainActor.run {
-					self.isLoading = false
-					self.onStateChanged?(.error(error.localizedDescription))
-				}
+				self.isLoading = false
+				onStateChanged?(.error(error.localizedDescription))
 			}
 		}
 	}
@@ -88,6 +88,10 @@ final class AssetsListViewModel {
 			}
 		}
 
-		onStateChanged?(filteredAssets.isEmpty ? .empty : .loaded(filteredAssets))
+		onStateChanged?(
+			filteredAssets.isEmpty
+			? .empty
+			: .loaded(filteredAssets, lastUpdated: lastUpdated, isFromCache: isShowingCachedData)
+		)
 	}
 }
