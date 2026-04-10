@@ -8,4 +8,12 @@
         <attribute name="symbol" attributeType="String"/>
         <attribute name="updatedAt" attributeType="Date" usesScalarValueType="NO"/>
     </entity>
+    <entity name="FavoriteAsset" representedClassName=".FavoriteAssetEntity" syncable="YES">
+        <attribute name="change24h" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="price" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="savedAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="symbol" attributeType="String"/>
+    </entity>
 </model>

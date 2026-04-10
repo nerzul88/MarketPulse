@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 final class AssetDetailViewModel {
 
 	enum State {
@@ -15,30 +16,56 @@ final class AssetDetailViewModel {
 		case error(String)
 	}
 
-	private let assetID: String
+	private let asset: Asset
 	private let fetchAssetDetailUseCase: FetchAssetDetailUseCase
+	private let toggleFavoriteUseCase: ToggleFavoriteUseCase
+	private let isFavoriteUseCase: IsFavoriteUseCase
 
 	var onStateChanged: ((State) -> Void)?
+	var onFavoriteStatusChanged: ((Bool) -> Void)?
 
-	init(assetID: String, fetchAssetDetailUseCase: FetchAssetDetailUseCase) {
-		self.assetID = assetID
+	init(
+		asset: Asset,
+		fetchAssetDetailUseCase: FetchAssetDetailUseCase,
+		toggleFavoriteUseCase: ToggleFavoriteUseCase,
+		isFavoriteUseCase: IsFavoriteUseCase
+	) {
+		self.asset = asset
 		self.fetchAssetDetailUseCase = fetchAssetDetailUseCase
+		self.toggleFavoriteUseCase = toggleFavoriteUseCase
+		self.isFavoriteUseCase = isFavoriteUseCase
 	}
 
 	func load() {
 		onStateChanged?(.loading)
+		updateFavoriteStatus()
 
 		Task {
 			do {
-				let detail = try await fetchAssetDetailUseCase.execute(id: assetID)
-				await MainActor.run {
-					self.onStateChanged?(.loaded(detail))
-				}
+				let detail = try await fetchAssetDetailUseCase.execute(id: asset.id)
+				onStateChanged?(.loaded(detail))
 			} catch {
-				await MainActor.run {
-					self.onStateChanged?(.error(error.localizedDescription))
-				}
+				onStateChanged?(.error(error.localizedDescription))
 			}
+		}
+	}
+
+	func updateFavoriteStatus() {
+		do {
+			let isFavorite = try isFavoriteUseCase.execute(id: asset.id)
+			onFavoriteStatusChanged?(isFavorite)
+		} catch {
+			onFavoriteStatusChanged?(false)
+		}
+	}
+
+	func toggleFavorite() {
+		do {
+			let isFavorite = try isFavoriteUseCase.execute(id: asset.id)
+			try toggleFavoriteUseCase.execute(asset: asset, isFavorite: isFavorite)
+			onFavoriteStatusChanged?(!isFavorite)
+		} catch {
+			onStateChanged?(.error(error.localizedDescription))
 		}
 	}
 }

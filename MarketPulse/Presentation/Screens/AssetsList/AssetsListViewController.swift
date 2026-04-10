@@ -124,7 +124,6 @@ final class AssetsListViewController: UIViewController {
 			if assets.isEmpty {
 				activityIndicator.startAnimating()
 			}
-
 		case .loaded(let assets, let lastUpdated, let isFromCache):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
@@ -133,7 +132,6 @@ final class AssetsListViewController: UIViewController {
 			self.assets = assets
 			tableView.reloadData()
 			updateStatusLabel(lastUpdated: lastUpdated, isFromCache: isFromCache)
-
 		case .empty:
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
@@ -142,7 +140,6 @@ final class AssetsListViewController: UIViewController {
 			tableView.isHidden = true
 			emptyStateLabel.isHidden = false
 			statusLabel.isHidden = true
-
 		case .error(let message):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
@@ -214,11 +211,21 @@ extension AssetsListViewController: UITableViewDelegate {
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		let asset = assets[indexPath.row]
 
-		let repository = AssetRepository(networkClient: NetworkClient())
-		let useCase = FetchAssetDetailUseCase(repository: repository)
-		let viewModel = AssetDetailViewModel(assetID: asset.id, fetchAssetDetailUseCase: useCase)
-		let viewController = AssetDetailViewController(viewModel: viewModel)
+		let assetRepository = AssetRepository(networkClient: NetworkClient())
+		let fetchDetailUseCase = FetchAssetDetailUseCase(repository: assetRepository)
 
+		let favoritesRepository = FavoritesRepository()
+		let toggleFavoriteUseCase = ToggleFavoriteUseCase(repository: favoritesRepository)
+		let isFavoriteUseCase = IsFavoriteUseCase(repository: favoritesRepository)
+
+		let viewModel = AssetDetailViewModel(
+			asset: asset,
+			fetchAssetDetailUseCase: fetchDetailUseCase,
+			toggleFavoriteUseCase: toggleFavoriteUseCase,
+			isFavoriteUseCase: isFavoriteUseCase
+		)
+
+		let viewController = AssetDetailViewController(viewModel: viewModel)
 		navigationController?.pushViewController(viewController, animated: true)
 	}
 }

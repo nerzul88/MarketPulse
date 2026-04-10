@@ -70,6 +70,14 @@ final class AssetDetailViewController: UIViewController {
 		scrollView.isHidden = true
 		setupUI()
 		bindViewModel()
+
+		navigationItem.rightBarButtonItem = UIBarButtonItem(
+			image: UIImage(systemName: "star"),
+			style: .plain,
+			target: self,
+			action: #selector(didTapFavorite)
+		)
+
 		viewModel.load()
 	}
 
@@ -112,6 +120,11 @@ final class AssetDetailViewController: UIViewController {
 	private func bindViewModel() {
 		viewModel.onStateChanged = { [weak self] state in
 			self?.handle(state: state)
+		}
+
+		viewModel.onFavoriteStatusChanged = { [weak self] isFavorite in
+			let imageName = isFavorite ? "star.fill" : "star"
+			self?.navigationItem.rightBarButtonItem?.image = UIImage(systemName: imageName)
 		}
 	}
 
@@ -159,5 +172,10 @@ final class AssetDetailViewController: UIViewController {
 		)
 		alert.addAction(UIAlertAction(title: "OK", style: .default))
 		present(alert, animated: true)
+	}
+
+	@objc
+	private func didTapFavorite() {
+		viewModel.toggleFavorite()
 	}
 }
