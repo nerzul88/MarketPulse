@@ -23,8 +23,12 @@ enum AssetsEndpoint {
 	}
 
 	static func detail(id: String) -> Endpoint {
-		Endpoint(
-			path: "/coins/\(id)",
+		var allowedCharacters = CharacterSet.urlPathAllowed
+		allowedCharacters.remove(charactersIn: "/")
+		let encodedID = id.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? id
+
+		return Endpoint(
+			path: "/coins/\(encodedID)",
 			method: .get,
 			queryItems: [
 				URLQueryItem(name: "localization", value: "false"),

@@ -37,14 +37,14 @@
 		BD39B3B92F70240000270972 /* Exceptions for "MarketPulseTests" folder in "MarketPulse" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				MockNetworkClient.swift,
+				Mocks/MockNetworkClient.swift,
 			);
 			target = BD39B2FD2F700CEC00270972 /* MarketPulse */;
 		};
 		BD39B3BA2F70240000270972 /* Exceptions for "MarketPulseTests" folder in "MarketPulseTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				MockNetworkClient.swift,
+				Mocks/MockNetworkClient.swift,
 			);
 			target = BD39B3AF2F7023F600270972 /* MarketPulseTests */;
 		};
@@ -441,6 +441,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = KR4RP4JXLV;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kasianov.MarketPulseTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -462,6 +463,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = KR4RP4JXLV;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kasianov.MarketPulseTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";

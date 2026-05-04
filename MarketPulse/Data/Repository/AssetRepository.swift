@@ -36,7 +36,7 @@ final class AssetRepository: AssetRepositoryProtocol {
 				lastUpdated: Date(),
 				isFromCache: false
 			)
-		} catch {
+		} catch let networkError {
 			do {
 				let cached = try localStorage.fetchAssets()
 				return AssetsResponse(
@@ -45,7 +45,7 @@ final class AssetRepository: AssetRepositoryProtocol {
 					isFromCache: true
 				)
 			} catch {
-				throw error
+				throw networkError
 			}
 		}
 	}
