@@ -10,6 +10,7 @@ import UIKit
 final class AssetsListViewController: UIViewController {
 
 	private let viewModel: AssetsListViewModel
+	private let makeAssetDetailViewController: (Asset) -> UIViewController
 	private let tableView: UITableView = {
 		let tableView = UITableView()
 		tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -50,8 +51,12 @@ final class AssetsListViewController: UIViewController {
 
 	// MARK: - Init
 
-	init(viewModel: AssetsListViewModel) {
+	init(
+		viewModel: AssetsListViewModel,
+		makeAssetDetailViewController: @escaping (Asset) -> UIViewController
+	) {
 		self.viewModel = viewModel
+		self.makeAssetDetailViewController = makeAssetDetailViewController
 		super.init(nibName: nil, bundle: nil)
 	}
 
@@ -210,22 +215,7 @@ extension AssetsListViewController: UITableViewDataSource {
 extension AssetsListViewController: UITableViewDelegate {
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		let asset = assets[indexPath.row]
-
-		let assetRepository = AssetRepository(networkClient: NetworkClient())
-		let fetchDetailUseCase = FetchAssetDetailUseCase(repository: assetRepository)
-
-		let favoritesRepository = FavoritesRepository()
-		let toggleFavoriteUseCase = ToggleFavoriteUseCase(repository: favoritesRepository)
-		let isFavoriteUseCase = IsFavoriteUseCase(repository: favoritesRepository)
-
-		let viewModel = AssetDetailViewModel(
-			asset: asset,
-			fetchAssetDetailUseCase: fetchDetailUseCase,
-			toggleFavoriteUseCase: toggleFavoriteUseCase,
-			isFavoriteUseCase: isFavoriteUseCase
-		)
-
-		let viewController = AssetDetailViewController(viewModel: viewModel)
+		let viewController = makeAssetDetailViewController(asset)
 		navigationController?.pushViewController(viewController, animated: true)
 	}
 }

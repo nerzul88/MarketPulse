@@ -10,6 +10,7 @@ import UIKit
 final class FavoritesViewController: UIViewController {
 
 	private let viewModel: FavoritesViewModel
+	private let makeAssetDetailViewController: (Asset) -> UIViewController
 
 	private let tableView: UITableView = {
 		let tableView = UITableView()
@@ -29,8 +30,12 @@ final class FavoritesViewController: UIViewController {
 
 	private var favorites: [FavoriteAsset] = []
 
-	init(viewModel: FavoritesViewModel) {
+	init(
+		viewModel: FavoritesViewModel,
+		makeAssetDetailViewController: @escaping (Asset) -> UIViewController
+	) {
 		self.viewModel = viewModel
+		self.makeAssetDetailViewController = makeAssetDetailViewController
 		super.init(nibName: nil, bundle: nil)
 	}
 
@@ -152,21 +157,7 @@ extension FavoritesViewController: UITableViewDelegate {
 			change24h: favorite.change24h
 		)
 
-		let assetRepository = AssetRepository(networkClient: NetworkClient())
-		let fetchDetailUseCase = FetchAssetDetailUseCase(repository: assetRepository)
-
-		let favoritesRepository = FavoritesRepository()
-		let toggleFavoriteUseCase = ToggleFavoriteUseCase(repository: favoritesRepository)
-		let isFavoriteUseCase = IsFavoriteUseCase(repository: favoritesRepository)
-
-		let viewModel = AssetDetailViewModel(
-			asset: asset,
-			fetchAssetDetailUseCase: fetchDetailUseCase,
-			toggleFavoriteUseCase: toggleFavoriteUseCase,
-			isFavoriteUseCase: isFavoriteUseCase
-		)
-
-		let viewController = AssetDetailViewController(viewModel: viewModel)
+		let viewController = makeAssetDetailViewController(asset)
 		navigationController?.pushViewController(viewController, animated: true)
 	}
 }
