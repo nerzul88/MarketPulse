@@ -47,7 +47,52 @@ final class AssetsListViewController: UIViewController {
 		label.isHidden = true
 		return label
 	}()
+	private let paginationActivityIndicator: UIActivityIndicatorView = {
+		let indicator = UIActivityIndicatorView(style: .medium)
+		indicator.hidesWhenStopped = true
+		return indicator
+	}()
+	private let paginationErrorLabel: UILabel = {
+		let label = UILabel()
+		label.font = .systemFont(ofSize: 13)
+		label.textColor = .secondaryLabel
+		label.textAlignment = .center
+		label.numberOfLines = 2
+		label.isHidden = true
+		return label
+	}()
+	private let paginationRetryButton: UIButton = {
+		var configuration = UIButton.Configuration.plain()
+		configuration.title = "Retry"
+		let button = UIButton(configuration: configuration)
+		button.isHidden = true
+		return button
+	}()
+	private lazy var paginationFooterView: UIView = {
+		let view = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 72))
+		paginationActivityIndicator.translatesAutoresizingMaskIntoConstraints = false
+		paginationErrorLabel.translatesAutoresizingMaskIntoConstraints = false
+		paginationRetryButton.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(paginationActivityIndicator)
+		view.addSubview(paginationErrorLabel)
+		view.addSubview(paginationRetryButton)
+
+		NSLayoutConstraint.activate([
+			paginationActivityIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			paginationActivityIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+			paginationErrorLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
+			paginationErrorLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+			paginationErrorLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+			paginationRetryButton.topAnchor.constraint(equalTo: paginationErrorLabel.bottomAnchor, constant: 4),
+			paginationRetryButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			paginationRetryButton.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -8)
+		])
+
+		return view
+	}()
 	private var assets: [Asset] = []
+	private var isPaginationLoadingVisible = false
+	private var paginationErrorMessage: String?
 
 	// MARK: - Init
 
@@ -70,7 +115,7 @@ final class AssetsListViewController: UIViewController {
 		super.viewDidLoad()
 		setupUI()
 		bindViewModel()
-		viewModel.loadAssets()
+		viewModel.loadInitialAssets()
 	}
 
 	// MARK: - Setup
@@ -85,6 +130,7 @@ final class AssetsListViewController: UIViewController {
 
 		refreshControl.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
 		tableView.refreshControl = refreshControl
+		paginationRetryButton.addTarget(self, action: #selector(didTapPaginationRetry), for: .touchUpInside)
 
 		searchController.searchResultsUpdater = self
 		navigationItem.searchController = searchController
@@ -118,16 +164,26 @@ final class AssetsListViewController: UIViewController {
 		viewModel.onStateChanged = { [weak self] state in
 			self?.handle(state: state)
 		}
+		viewModel.onPaginationStateChanged = { [weak self] isLoading in
+			self?.handlePaginationState(isLoading: isLoading)
+		}
+		viewModel.onPaginationErrorChanged = { [weak self] message in
+			self?.handlePaginationError(message: message)
+		}
 	}
 
 	private func handle(state: AssetsListViewModel.State) {
 		switch state {
 		case .loading:
 			emptyStateLabel.isHidden = true
-			statusLabel.isHidden = true
+			statusLabel.isHidden = assets.isEmpty
 
 			if assets.isEmpty {
 				activityIndicator.startAnimating()
+				tableView.isHidden = true
+			} else {
+				activityIndicator.stopAnimating()
+				tableView.isHidden = false
 			}
 		case .loaded(let assets, let lastUpdated, let isFromCache):
 			activityIndicator.stopAnimating()
@@ -140,6 +196,7 @@ final class AssetsListViewController: UIViewController {
 		case .empty:
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
+			handlePaginationError(message: nil)
 			assets = []
 			tableView.reloadData()
 			tableView.isHidden = true
@@ -148,6 +205,7 @@ final class AssetsListViewController: UIViewController {
 		case .error(let message):
 			activityIndicator.stopAnimating()
 			refreshControl.endRefreshing()
+			handlePaginationError(message: nil)
 			showErrorAlert(message: message)
 			statusLabel.isHidden = assets.isEmpty
 		}
@@ -181,9 +239,51 @@ final class AssetsListViewController: UIViewController {
 		present(alert, animated: true)
 	}
 
+	private func handlePaginationState(isLoading: Bool) {
+		guard isPaginationLoadingVisible != isLoading else { return }
+		isPaginationLoadingVisible = isLoading
+
+		if isLoading, !assets.isEmpty {
+			paginationActivityIndicator.startAnimating()
+			paginationErrorLabel.isHidden = true
+			paginationRetryButton.isHidden = true
+			tableView.tableFooterView = paginationFooterView
+		} else {
+			paginationActivityIndicator.stopAnimating()
+			if paginationErrorMessage == nil {
+				tableView.tableFooterView = nil
+			}
+		}
+	}
+
+	private func handlePaginationError(message: String?) {
+		paginationErrorMessage = message
+
+		guard let message, !assets.isEmpty else {
+			paginationErrorLabel.text = nil
+			paginationErrorLabel.isHidden = true
+			paginationRetryButton.isHidden = true
+			if !isPaginationLoadingVisible {
+				tableView.tableFooterView = nil
+			}
+			return
+		}
+
+		paginationActivityIndicator.stopAnimating()
+		paginationErrorLabel.text = "Couldn't load more assets.\n\(message)"
+		paginationErrorLabel.isHidden = false
+		paginationRetryButton.isHidden = false
+		tableView.tableFooterView = paginationFooterView
+	}
+
 	@objc
 	private func didPullToRefresh() {
-		viewModel.loadAssets()
+		viewModel.loadInitialAssets()
+	}
+
+	@objc
+	private func didTapPaginationRetry() {
+		viewModel.retryNextPageLoad()
 	}
 }
 
@@ -217,6 +317,11 @@ extension AssetsListViewController: UITableViewDelegate {
 		let asset = assets[indexPath.row]
 		let viewController = makeAssetDetailViewController(asset)
 		navigationController?.pushViewController(viewController, animated: true)
+	}
+
+	func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+		let asset = assets[indexPath.row]
+		viewModel.loadNextPageIfNeeded(currentAsset: asset)
 	}
 }
 

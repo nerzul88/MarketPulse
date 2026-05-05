@@ -10,12 +10,31 @@
 final class MockAssetRepository: AssetRepositoryProtocol {
 
 	var fetchAssetsResult: Result<AssetsResponse, Error>?
+	var fetchAssetsResultsByPage: [Int: Result<AssetsResponse, Error>] = [:]
+	var fetchAssetsDelayByPage: [Int: UInt64] = [:]
+	var fetchAssetsHandler: ((Int, Int) async throws -> AssetsResponse)?
 	var fetchAssetDetailResult: Result<AssetDetail, Error>?
 	var fetchAssetsCallCount = 0
+	var lastFetchAssetsPage: Int?
+	var lastFetchAssetsLimit: Int?
 	var lastFetchAssetDetailID: String?
 
-	func fetchAssets() async throws -> AssetsResponse {
+	func fetchAssets(page: Int, limit: Int) async throws -> AssetsResponse {
 		fetchAssetsCallCount += 1
+		lastFetchAssetsPage = page
+		lastFetchAssetsLimit = limit
+
+		if let fetchAssetsHandler {
+			return try await fetchAssetsHandler(page, limit)
+		}
+
+		if let delay = fetchAssetsDelayByPage[page] {
+			try? await Task.sleep(nanoseconds: delay)
+		}
+
+		if let result = fetchAssetsResultsByPage[page] {
+			return try result.get()
+		}
 
 		guard let result = fetchAssetsResult else {
 			fatalError("fetchAssetsResult was not set")

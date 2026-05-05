@@ -8,15 +8,15 @@
 import Foundation
 
 enum AssetsEndpoint {
-	static func markets() -> Endpoint {
+	static func markets(page: Int, perPage: Int) -> Endpoint {
 		Endpoint(
 			path: "/coins/markets",
 			method: .get,
 			queryItems: [
 				URLQueryItem(name: "vs_currency", value: "usd"),
 				URLQueryItem(name: "order", value: "market_cap_desc"),
-				URLQueryItem(name: "per_page", value: "20"),
-				URLQueryItem(name: "page", value: "1"),
+				URLQueryItem(name: "per_page", value: "\(perPage)"),
+				URLQueryItem(name: "page", value: "\(page)"),
 				URLQueryItem(name: "sparkline", value: "false")
 			]
 		)

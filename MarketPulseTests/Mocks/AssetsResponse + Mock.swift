@@ -12,12 +12,16 @@ extension AssetsResponse {
 	static func mock(
 		assets: [Asset],
 		lastUpdated: Date? = nil,
-		isFromCache: Bool = false
+		isFromCache: Bool = false,
+		page: Int = 1,
+		canLoadMore: Bool = false
 	) -> AssetsResponse {
 		AssetsResponse(
 			assets: assets,
 			lastUpdated: lastUpdated,
-			isFromCache: isFromCache
+			isFromCache: isFromCache,
+			page: page,
+			canLoadMore: canLoadMore
 		)
 	}
 }

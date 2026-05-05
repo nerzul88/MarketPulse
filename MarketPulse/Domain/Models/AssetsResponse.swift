@@ -11,4 +11,6 @@ struct AssetsResponse: Equatable {
 	let assets: [Asset]
 	let lastUpdated: Date?
 	let isFromCache: Bool
+	let page: Int
+	let canLoadMore: Bool
 }

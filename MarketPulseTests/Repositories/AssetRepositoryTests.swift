@@ -32,10 +32,12 @@ final class AssetRepositoryTests: XCTestCase {
 			localStorage: localStorage
 		)
 
-		let response = try await repository.fetchAssets()
+		let response = try await repository.fetchAssets(page: 1, limit: 20)
 
 		XCTAssertEqual(response.assets.count, 1)
 		XCTAssertFalse(response.isFromCache)
+		XCTAssertEqual(response.page, 1)
+		XCTAssertFalse(response.canLoadMore)
 		XCTAssertTrue(localStorage.saveWasCalled)
 		XCTAssertEqual(localStorage.savedAssets.first?.id, "bitcoin")
 	}
@@ -66,7 +68,7 @@ final class AssetRepositoryTests: XCTestCase {
 			localStorage: localStorage
 		)
 
-		let response = try await repository.fetchAssets()
+		let response = try await repository.fetchAssets(page: 1, limit: 20)
 
 		XCTAssertEqual(response.assets, [Asset.mock(id: "bitcoin", name: "Bitcoin", symbol: "BTC")])
 		XCTAssertEqual(localStorage.savedAssets, response.assets)
@@ -92,7 +94,7 @@ final class AssetRepositoryTests: XCTestCase {
 			localStorage: localStorage
 		)
 
-		let response = try await repository.fetchAssets()
+		let response = try await repository.fetchAssets(page: 1, limit: 20)
 
 		XCTAssertEqual(response.assets.count, 1)
 		XCTAssertFalse(response.isFromCache)
@@ -118,10 +120,11 @@ final class AssetRepositoryTests: XCTestCase {
 			localStorage: localStorage
 		)
 
-		let response = try await repository.fetchAssets()
+		let response = try await repository.fetchAssets(page: 1, limit: 20)
 
 		XCTAssertEqual(response.assets, cachedAssets)
 		XCTAssertTrue(response.isFromCache)
+		XCTAssertFalse(response.canLoadMore)
 		XCTAssertTrue(localStorage.fetchWasCalled)
 	}
 
@@ -138,10 +141,58 @@ final class AssetRepositoryTests: XCTestCase {
 		)
 
 		do {
-			_ = try await repository.fetchAssets()
+			_ = try await repository.fetchAssets(page: 1, limit: 20)
 			XCTFail("Expected fetchAssets to throw")
 		} catch {
 			XCTAssertEqual(error as? TestError, .somethingWentWrong)
+		}
+	}
+
+	func test_fetchAssets_onSecondPageSuccess_doesNotOverwriteCache() async throws {
+		let networkClient = MockNetworkClient()
+		let localStorage = MockAssetsLocalStorage()
+
+		networkClient.result = .success([
+			AssetDTO(
+				id: "solana",
+				name: "Solana",
+				symbol: "sol",
+				currentPrice: 150,
+				priceChangePercentage24H: 4.1
+			)
+		])
+
+		let repository = AssetRepository(
+			networkClient: networkClient,
+			localStorage: localStorage
+		)
+
+		let response = try await repository.fetchAssets(page: 2, limit: 20)
+
+		XCTAssertEqual(response.page, 2)
+		XCTAssertFalse(localStorage.saveWasCalled)
+	}
+
+	func test_fetchAssets_onSecondPageFailure_rethrowsNetworkErrorWithoutCacheFallback() async {
+		let networkClient = MockNetworkClient()
+		let localStorage = MockAssetsLocalStorage()
+
+		networkClient.result = .failure(TestError.somethingWentWrong)
+		localStorage.fetchResult = .success(
+			CachedAssets(assets: [Asset.mock()], lastUpdated: Date())
+		)
+
+		let repository = AssetRepository(
+			networkClient: networkClient,
+			localStorage: localStorage
+		)
+
+		do {
+			_ = try await repository.fetchAssets(page: 2, limit: 20)
+			XCTFail("Expected fetchAssets to throw")
+		} catch {
+			XCTAssertEqual(error as? TestError, .somethingWentWrong)
+			XCTAssertFalse(localStorage.fetchWasCalled)
 		}
 	}
 
