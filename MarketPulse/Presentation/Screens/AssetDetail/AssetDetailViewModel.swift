@@ -20,9 +20,17 @@ final class AssetDetailViewModel {
 	private let fetchAssetDetailUseCase: FetchAssetDetailUseCase
 	private let toggleFavoriteUseCase: ToggleFavoriteUseCase
 	private let isFavoriteUseCase: IsFavoriteUseCase
+	private let descriptionRetryDelays: [UInt64] = [
+		2_000_000_000,
+		4_000_000_000,
+		6_000_000_000
+	]
+	private var loadTask: Task<Void, Never>?
+	private var descriptionRetryTask: Task<Void, Never>?
 
 	var onStateChanged: ((State) -> Void)?
 	var onFavoriteStatusChanged: ((Bool) -> Void)?
+	var onOverviewTextChanged: ((String) -> Void)?
 	var initialDetail: AssetDetail {
 		AssetDetail(
 			id: asset.id,
@@ -30,9 +38,9 @@ final class AssetDetailViewModel {
 			symbol: asset.symbol,
 			price: asset.price,
 			change24h: asset.change24h,
-			marketCap: nil,
-			high24h: nil,
-			low24h: nil,
+			marketCap: asset.marketCap,
+			high24h: asset.high24h,
+			low24h: asset.low24h,
 			overview: nil
 		)
 	}
@@ -50,14 +58,21 @@ final class AssetDetailViewModel {
 	}
 
 	func load() {
+		loadTask?.cancel()
+		descriptionRetryTask?.cancel()
 		onStateChanged?(.loading)
 		updateFavoriteStatus()
+		onOverviewTextChanged?(initialOverviewText)
 
-		Task {
+		loadTask = Task { [weak self] in
+			guard let self else { return }
 			do {
-				let detail = try await fetchAssetDetailUseCase.execute(id: asset.id)
+				let detail = try await fetchAssetDetailUseCase.execute(id: self.asset.id)
+				guard !Task.isCancelled else { return }
 				onStateChanged?(.loaded(detail))
 			} catch {
+				guard !Task.isCancelled else { return }
+				scheduleDescriptionRetryIfNeeded()
 				onStateChanged?(.error(error.localizedDescription))
 			}
 		}
@@ -79,6 +94,47 @@ final class AssetDetailViewModel {
 			onFavoriteStatusChanged?(!isFavorite)
 		} catch {
 			onStateChanged?(.error(error.localizedDescription))
+		}
+	}
+
+	deinit {
+		loadTask?.cancel()
+		descriptionRetryTask?.cancel()
+	}
+}
+
+private extension AssetDetailViewModel {
+	var initialOverviewText: String {
+		if let overview = initialDetail.overview, !overview.isEmpty {
+			return overview
+		}
+
+		return "Loading description..."
+	}
+
+	func scheduleDescriptionRetryIfNeeded() {
+		guard initialDetail.overview == nil else { return }
+
+		descriptionRetryTask?.cancel()
+		descriptionRetryTask = Task { [weak self] in
+			guard let self else { return }
+
+			for delay in descriptionRetryDelays {
+				try? await Task.sleep(nanoseconds: delay)
+				guard !Task.isCancelled else { return }
+
+				do {
+					let detail = try await fetchAssetDetailUseCase.execute(id: asset.id)
+					guard !Task.isCancelled else { return }
+					onStateChanged?(.loaded(detail))
+					return
+				} catch {
+					continue
+				}
+			}
+
+			guard !Task.isCancelled else { return }
+			onOverviewTextChanged?("Description is temporarily unavailable.")
 		}
 	}
 }

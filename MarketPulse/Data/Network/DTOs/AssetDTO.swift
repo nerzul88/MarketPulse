@@ -14,4 +14,7 @@ struct AssetDTO: Decodable {
 	let image: String?
 	let currentPrice: Double?
 	let priceChangePercentage24H: Double?
+	let marketCap: Double?
+	let high24H: Double?
+	let low24H: Double?
 }

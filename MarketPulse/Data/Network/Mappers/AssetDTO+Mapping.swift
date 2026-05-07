@@ -17,7 +17,10 @@ extension AssetDTO {
 			symbol: symbol.uppercased(),
 			imageURL: image.flatMap(URL.init(string:)),
 			price: currentPrice,
-			change24h: priceChangePercentage24H ?? 0
+			change24h: priceChangePercentage24H ?? 0,
+			marketCap: marketCap,
+			high24h: high24H,
+			low24h: low24H
 		)
 	}
 }

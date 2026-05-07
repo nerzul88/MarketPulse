@@ -14,4 +14,7 @@ struct Asset: Equatable {
 	let imageURL: URL?
 	let price: Double
 	let change24h: Double
+	let marketCap: Double?
+	let high24h: Double?
+	let low24h: Double?
 }

@@ -82,6 +82,11 @@ final class AssetDetailViewController: UIViewController {
 		viewModel.load()
 	}
 
+	override func viewWillAppear(_ animated: Bool) {
+		super.viewWillAppear(animated)
+		viewModel.updateFavoriteStatus()
+	}
+
 	private func setupUI() {
 		view.backgroundColor = .systemBackground
 
@@ -122,6 +127,9 @@ final class AssetDetailViewController: UIViewController {
 		viewModel.onStateChanged = { [weak self] state in
 			self?.handle(state: state)
 		}
+		viewModel.onOverviewTextChanged = { [weak self] overviewText in
+			self?.overviewLabel.text = overviewText
+		}
 
 		viewModel.onFavoriteStatusChanged = { [weak self] isFavorite in
 			let imageName = isFavorite ? "star.fill" : "star"
@@ -157,7 +165,11 @@ final class AssetDetailViewController: UIViewController {
 		changeLabel.text = "24h: \(String(format: "%.2f", detail.change24h))%"
 		marketCapLabel.text = "Market Cap: \(formatOptionalCurrency(detail.marketCap))"
 		highLowLabel.text = "24h High / Low: \(formatOptionalCurrency(detail.high24h)) / \(formatOptionalCurrency(detail.low24h))"
-		overviewLabel.text = detail.overview?.isEmpty == false ? detail.overview : "No description available"
+		if let overview = detail.overview, !overview.isEmpty {
+			overviewLabel.text = overview
+		} else if overviewLabel.text == nil {
+			overviewLabel.text = "Loading description..."
+		}
 	}
 
 	private func formatOptionalCurrency(_ value: Double?) -> String {

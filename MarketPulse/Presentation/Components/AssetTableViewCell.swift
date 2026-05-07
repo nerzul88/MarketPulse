@@ -66,6 +66,7 @@ final class AssetTableViewCell: UITableViewCell {
 		return stackView
 	}()
 	private var imageTask: Task<Void, Never>?
+	private var currentImageURL: URL?
 
 	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
 		super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -80,6 +81,7 @@ final class AssetTableViewCell: UITableViewCell {
 		super.prepareForReuse()
 		imageTask?.cancel()
 		imageTask = nil
+		currentImageURL = nil
 		assetImageView.image = nil
 		symbolLabel.text = nil
 		nameLabel.text = nil
@@ -97,6 +99,7 @@ final class AssetTableViewCell: UITableViewCell {
 		changeLabel.text = Self.formatChange(asset.change24h)
 		changeLabel.textColor = asset.change24h >= 0 ? .systemGreen : .systemRed
 		assetImageView.image = UIImage(systemName: "bitcoinsign.circle")
+		currentImageURL = asset.imageURL
 
 		guard let imageURL = asset.imageURL else { return }
 
@@ -105,9 +108,11 @@ final class AssetTableViewCell: UITableViewCell {
 				let image = try await imageLoader.loadImage(from: imageURL)
 
 				guard !Task.isCancelled else { return }
+				guard let self else { return }
 
 				await MainActor.run {
-					self?.assetImageView.image = image
+					guard self.currentImageURL == imageURL else { return }
+					self.assetImageView.image = image
 				}
 			} catch {
 				guard !Task.isCancelled else { return }

@@ -137,9 +137,12 @@ extension FavoritesViewController: UITableViewDataSource {
 			id: favorite.id,
 			name: favorite.name,
 			symbol: favorite.symbol,
-			imageURL: nil,
+			imageURL: favorite.imageURL,
 			price: favorite.price,
-			change24h: favorite.change24h
+			change24h: favorite.change24h,
+			marketCap: nil,
+			high24h: nil,
+			low24h: nil
 		)
 
 		cell.configure(with: asset, imageLoader: imageLoader)
@@ -157,9 +160,12 @@ extension FavoritesViewController: UITableViewDelegate {
 			id: favorite.id,
 			name: favorite.name,
 			symbol: favorite.symbol,
-			imageURL: nil,
+			imageURL: favorite.imageURL,
 			price: favorite.price,
-			change24h: favorite.change24h
+			change24h: favorite.change24h,
+			marketCap: nil,
+			high24h: nil,
+			low24h: nil
 		)
 
 		onAssetSelected(asset)

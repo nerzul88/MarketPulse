@@ -53,7 +53,10 @@ final class AssetsLocalStorage: AssetsLocalStorageProtocol {
 				symbol: $0.symbol,
 				imageURL: nil,
 				price: $0.price,
-				change24h: $0.change24h
+				change24h: $0.change24h,
+				marketCap: nil,
+				high24h: nil,
+				low24h: nil
 			)
 		}
 
