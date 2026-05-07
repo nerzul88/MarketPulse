@@ -10,6 +10,7 @@ import UIKit
 final class AssetDetailViewController: UIViewController {
 
 	private let viewModel: AssetDetailViewModel
+	private var hasConfiguredContent = false
 
 	private let scrollView: UIScrollView = {
 		let scrollView = UIScrollView()
@@ -67,7 +68,6 @@ final class AssetDetailViewController: UIViewController {
 
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		scrollView.isHidden = true
 		setupUI()
 		bindViewModel()
 
@@ -78,6 +78,7 @@ final class AssetDetailViewController: UIViewController {
 			action: #selector(didTapFavorite)
 		)
 
+		configure(with: viewModel.initialDetail)
 		viewModel.load()
 	}
 
@@ -131,7 +132,7 @@ final class AssetDetailViewController: UIViewController {
 	private func handle(state: AssetDetailViewModel.State) {
 		switch state {
 		case .loading:
-			scrollView.isHidden = true
+			scrollView.isHidden = false
 			activityIndicator.startAnimating()
 
 		case .loaded(let detail):
@@ -142,11 +143,13 @@ final class AssetDetailViewController: UIViewController {
 		case .error(let message):
 			activityIndicator.stopAnimating()
 			scrollView.isHidden = false
+			guard !hasConfiguredContent else { return }
 			showErrorAlert(message: message)
 		}
 	}
 
 	private func configure(with detail: AssetDetail) {
+		hasConfiguredContent = true
 		title = detail.symbol
 		nameLabel.text = detail.name
 		symbolLabel.text = detail.symbol

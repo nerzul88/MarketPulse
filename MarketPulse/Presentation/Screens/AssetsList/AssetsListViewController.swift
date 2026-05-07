@@ -10,6 +10,7 @@ import UIKit
 final class AssetsListViewController: UIViewController {
 
 	private let viewModel: AssetsListViewModel
+	private let imageLoader: ImageLoaderProtocol
 	private let onAssetSelected: (Asset) -> Void
 	private let tableView: UITableView = {
 		let tableView = UITableView()
@@ -98,9 +99,11 @@ final class AssetsListViewController: UIViewController {
 
 	init(
 		viewModel: AssetsListViewModel,
+		imageLoader: ImageLoaderProtocol,
 		onAssetSelected: @escaping (Asset) -> Void
 	) {
 		self.viewModel = viewModel
+		self.imageLoader = imageLoader
 		self.onAssetSelected = onAssetSelected
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -305,7 +308,7 @@ extension AssetsListViewController: UITableViewDataSource {
 		}
 
 		let asset = assets[indexPath.row]
-		cell.configure(with: asset)
+		cell.configure(with: asset, imageLoader: imageLoader)
 		return cell
 	}
 }

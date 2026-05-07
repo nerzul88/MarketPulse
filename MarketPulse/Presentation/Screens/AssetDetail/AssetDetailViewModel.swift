@@ -23,6 +23,19 @@ final class AssetDetailViewModel {
 
 	var onStateChanged: ((State) -> Void)?
 	var onFavoriteStatusChanged: ((Bool) -> Void)?
+	var initialDetail: AssetDetail {
+		AssetDetail(
+			id: asset.id,
+			name: asset.name,
+			symbol: asset.symbol,
+			price: asset.price,
+			change24h: asset.change24h,
+			marketCap: nil,
+			high24h: nil,
+			low24h: nil,
+			overview: nil
+		)
+	}
 
 	init(
 		asset: Asset,

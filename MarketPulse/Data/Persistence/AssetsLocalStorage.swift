@@ -51,6 +51,7 @@ final class AssetsLocalStorage: AssetsLocalStorageProtocol {
 				id: $0.id,
 				name: $0.name,
 				symbol: $0.symbol,
+				imageURL: nil,
 				price: $0.price,
 				change24h: $0.change24h
 			)

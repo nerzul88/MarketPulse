@@ -10,6 +10,7 @@ import UIKit
 final class FavoritesViewController: UIViewController {
 
 	private let viewModel: FavoritesViewModel
+	private let imageLoader: ImageLoaderProtocol
 	private let onAssetSelected: (Asset) -> Void
 
 	private let tableView: UITableView = {
@@ -32,9 +33,11 @@ final class FavoritesViewController: UIViewController {
 
 	init(
 		viewModel: FavoritesViewModel,
+		imageLoader: ImageLoaderProtocol,
 		onAssetSelected: @escaping (Asset) -> Void
 	) {
 		self.viewModel = viewModel
+		self.imageLoader = imageLoader
 		self.onAssetSelected = onAssetSelected
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -134,11 +137,12 @@ extension FavoritesViewController: UITableViewDataSource {
 			id: favorite.id,
 			name: favorite.name,
 			symbol: favorite.symbol,
+			imageURL: nil,
 			price: favorite.price,
 			change24h: favorite.change24h
 		)
 
-		cell.configure(with: asset)
+		cell.configure(with: asset, imageLoader: imageLoader)
 		return cell
 	}
 }
@@ -153,6 +157,7 @@ extension FavoritesViewController: UITableViewDelegate {
 			id: favorite.id,
 			name: favorite.name,
 			symbol: favorite.symbol,
+			imageURL: nil,
 			price: favorite.price,
 			change24h: favorite.change24h
 		)

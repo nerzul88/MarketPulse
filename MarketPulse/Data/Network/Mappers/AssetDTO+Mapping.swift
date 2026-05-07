@@ -15,6 +15,7 @@ extension AssetDTO {
 			id: id,
 			name: name,
 			symbol: symbol.uppercased(),
+			imageURL: image.flatMap(URL.init(string:)),
 			price: currentPrice,
 			change24h: priceChangePercentage24H ?? 0
 		)

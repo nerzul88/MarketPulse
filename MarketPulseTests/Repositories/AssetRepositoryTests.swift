@@ -20,6 +20,7 @@ final class AssetRepositoryTests: XCTestCase {
 				id: "bitcoin",
 				name: "Bitcoin",
 				symbol: "btc",
+				image: nil,
 				currentPrice: 100_000,
 				priceChangePercentage24H: 2.5
 			)
@@ -51,6 +52,7 @@ final class AssetRepositoryTests: XCTestCase {
 				id: "bitcoin",
 				name: "Bitcoin",
 				symbol: "btc",
+				image: nil,
 				currentPrice: 100_000,
 				priceChangePercentage24H: 2.5
 			),
@@ -58,6 +60,7 @@ final class AssetRepositoryTests: XCTestCase {
 				id: "broken",
 				name: "Broken",
 				symbol: "brk",
+				image: nil,
 				currentPrice: nil,
 				priceChangePercentage24H: 1.0
 			)
@@ -83,6 +86,7 @@ final class AssetRepositoryTests: XCTestCase {
 				id: "bitcoin",
 				name: "Bitcoin",
 				symbol: "btc",
+				image: nil,
 				currentPrice: 100_000,
 				priceChangePercentage24H: 2.5
 			)
@@ -157,6 +161,7 @@ final class AssetRepositoryTests: XCTestCase {
 				id: "solana",
 				name: "Solana",
 				symbol: "sol",
+				image: nil,
 				currentPrice: 150,
 				priceChangePercentage24H: 4.1
 			)
@@ -271,5 +276,37 @@ final class AssetRepositoryTests: XCTestCase {
 		} catch {
 			XCTFail("Expected invalidResponse, got \(error)")
 		}
+	}
+
+	func test_fetchAssetDetail_whenDetailIsCached_returnsCachedValueWithoutNetworkCall() async throws {
+		let networkClient = MockNetworkClient()
+		let localStorage = MockAssetsLocalStorage()
+
+		networkClient.result = .success(
+			AssetDetailDTO(
+				id: "bitcoin",
+				name: "Bitcoin",
+				symbol: "btc",
+				marketData: MarketDataDTO(
+					currentPrice: ["usd": 100_000],
+					priceChangePercentage24H: 2.5,
+					marketCap: ["usd": 2_000_000_000],
+					high24H: ["usd": 101_500],
+					low24H: ["usd": 98_000]
+				),
+				description: DescriptionDTO(en: "<p>Digital gold</p>")
+			)
+		)
+
+		let repository = AssetRepository(
+			networkClient: networkClient,
+			localStorage: localStorage
+		)
+
+		let firstDetail = try await repository.fetchAssetDetail(id: "bitcoin")
+		networkClient.result = .failure(NetworkError.unexpectedStatusCode(429))
+		let secondDetail = try await repository.fetchAssetDetail(id: "bitcoin")
+
+		XCTAssertEqual(firstDetail, secondDetail)
 	}
 }

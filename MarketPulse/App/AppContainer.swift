@@ -30,6 +30,7 @@ final class AppContainer {
 		networkClient: networkClient,
 		localStorage: assetsLocalStorage
 	)
+	private lazy var imageLoader: ImageLoaderProtocol = ImageLoader()
 
 	private lazy var favoritesRepository: FavoritesRepositoryProtocol = FavoritesRepository(
 		localStorage: favoritesLocalStorage
@@ -59,6 +60,7 @@ final class AppContainer {
 		let viewModel = AssetsListViewModel(fetchAssetsUseCase: fetchAssetsUseCase)
 		return AssetsListViewController(
 			viewModel: viewModel,
+			imageLoader: imageLoader,
 			onAssetSelected: onAssetSelected
 		)
 	}
@@ -69,6 +71,7 @@ final class AppContainer {
 		let viewModel = FavoritesViewModel(fetchFavoritesUseCase: fetchFavoritesUseCase)
 		return FavoritesViewController(
 			viewModel: viewModel,
+			imageLoader: imageLoader,
 			onAssetSelected: onAssetSelected
 		)
 	}

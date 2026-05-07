@@ -11,6 +11,7 @@ final class AssetRepository: AssetRepositoryProtocol {
 
 	private let networkClient: NetworkClientProtocol
 	private let localStorage: AssetsLocalStorageProtocol
+	private var assetDetailsCache: [String: AssetDetail] = [:]
 
 	init(
 		networkClient: NetworkClientProtocol,
@@ -63,12 +64,17 @@ final class AssetRepository: AssetRepositoryProtocol {
 	}
 
 	func fetchAssetDetail(id: String) async throws -> AssetDetail {
+		if let cachedDetail = assetDetailsCache[id] {
+			return cachedDetail
+		}
+
 		let dto: AssetDetailDTO = try await networkClient.request(AssetsEndpoint.detail(id: id))
 
 		guard let detail = dto.toDomain() else {
 			throw NetworkError.invalidResponse
 		}
 
+		assetDetailsCache[id] = detail
 		return detail
 	}
 }
