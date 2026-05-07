@@ -296,7 +296,7 @@ final class AssetsListViewModelTests: XCTestCase {
 		XCTAssertEqual(repository.fetchAssetsCallCount, 1)
 	}
 
-	func test_loadNextPageIfNeeded_whenSearchIsActive_doesNotLoadNextPage() async {
+	func test_loadNextPage_doesNotLoadWhenSearchQueryIsActive() async {
 		let repository = MockAssetRepository()
 		let firstPageAssets = (1...20).map { index in
 			Asset.mock(id: "asset-\(index)", name: "Asset \(index)", symbol: "A\(index)")
@@ -323,7 +323,7 @@ final class AssetsListViewModelTests: XCTestCase {
 		XCTAssertEqual(repository.fetchAssetsCallCount, 1)
 	}
 
-	func test_loadNextPageIfNeeded_togglesPaginationLoadingCallback() async {
+	func test_loadNextPage_setsPaginationLoadingState() async {
 		let repository = MockAssetRepository()
 		let firstPageAssets = (1...20).map { index in
 			Asset.mock(id: "asset-\(index)", name: "Asset \(index)", symbol: "A\(index)")
@@ -467,7 +467,7 @@ final class AssetsListViewModelTests: XCTestCase {
 		XCTAssertEqual(receivedPaginationMessages, [TestError.somethingWentWrong.localizedDescription, nil])
 	}
 
-	func test_loadInitialAssets_cancelsStalePaginationResponse() async {
+	func test_loadNextPage_doesNotAppendWhenRefreshStarted() async {
 		let repository = MockAssetRepository()
 		let firstPageAssets = (1...20).map { index in
 			Asset.mock(id: "asset-\(index)", name: "Asset \(index)", symbol: "A\(index)")
@@ -576,5 +576,88 @@ final class AssetsListViewModelTests: XCTestCase {
 		XCTAssertEqual(repository.fetchAssetsCallCount, 2)
 		XCTAssertEqual(finalAssets, refreshedAssets)
 		XCTAssertFalse(finalAssets.contains(where: { $0.id == "stale-1" }))
+	}
+
+	func test_loadAssets_cancelsPaginationTask() async {
+		let repository = MockAssetRepository()
+		let firstPageAssets = (1...20).map { index in
+			Asset.mock(id: "asset-\(index)", name: "Asset \(index)", symbol: "A\(index)")
+		}
+		let refreshedAssets = (1...20).map { index in
+			Asset.mock(id: "refresh-\(index)", name: "Refresh \(index)", symbol: "R\(index)")
+		}
+		let staleSecondPageAssets = [
+			Asset.mock(id: "stale-21", name: "Stale 21", symbol: "S21")
+		]
+
+		repository.fetchAssetsResultsByPage = [
+			1: .success(.mock(assets: firstPageAssets, page: 1, canLoadMore: true)),
+			2: .success(.mock(assets: staleSecondPageAssets, page: 2, canLoadMore: false))
+		]
+
+		let viewModel = AssetsListViewModel(fetchAssetsUseCase: FetchAssetsUseCase(repository: repository))
+		let initialExpectation = expectation(description: "Initial page loaded")
+		let refreshedExpectation = expectation(description: "Reloaded first page loaded")
+		var paginationStates: [Bool] = []
+		var loadedSnapshots: [[Asset]] = []
+
+		viewModel.onStateChanged = { state in
+			guard case let .loaded(assets, _, _) = state else { return }
+			loadedSnapshots.append(assets)
+
+			if assets == firstPageAssets {
+				initialExpectation.fulfill()
+			}
+
+			if assets == refreshedAssets {
+				refreshedExpectation.fulfill()
+			}
+		}
+		viewModel.onPaginationStateChanged = { paginationStates.append($0) }
+
+		viewModel.loadAssets()
+		await fulfillment(of: [initialExpectation], timeout: 1.0)
+
+		repository.fetchAssetsDelayByPage[2] = 300_000_000
+		repository.fetchAssetsResultsByPage[1] = .success(.mock(assets: refreshedAssets, page: 1, canLoadMore: true))
+
+		viewModel.loadNextPageIfNeeded(currentAsset: firstPageAssets[19])
+		viewModel.loadAssets()
+
+		await fulfillment(of: [refreshedExpectation], timeout: 1.0)
+		try? await Task.sleep(nanoseconds: 400_000_000)
+
+		guard let finalAssets = loadedSnapshots.last else {
+			return XCTFail("Expected final assets snapshot")
+		}
+
+		XCTAssertEqual(finalAssets, refreshedAssets)
+		XCTAssertEqual(paginationStates, [true, false])
+		XCTAssertFalse(finalAssets.contains(where: { $0.id == "stale-21" }))
+	}
+
+	func test_loadNextPage_doesNotLoadWhenCanLoadMoreIsFalse() async {
+		let repository = MockAssetRepository()
+		let firstPageAssets = (1...20).map { index in
+			Asset.mock(id: "asset-\(index)", name: "Asset \(index)", symbol: "A\(index)")
+		}
+
+		repository.fetchAssetsResult = .success(.mock(assets: firstPageAssets, page: 1, canLoadMore: false))
+
+		let viewModel = AssetsListViewModel(fetchAssetsUseCase: FetchAssetsUseCase(repository: repository))
+		let loadExpectation = expectation(description: "Initial page loaded")
+
+		viewModel.onStateChanged = { state in
+			if case .loaded(let assets, _, _) = state, assets.count == 20 {
+				loadExpectation.fulfill()
+			}
+		}
+
+		viewModel.loadInitialAssets()
+		await fulfillment(of: [loadExpectation], timeout: 1.0)
+
+		viewModel.loadNextPageIfNeeded(currentAsset: firstPageAssets[19])
+
+		XCTAssertEqual(repository.fetchAssetsCallCount, 1)
 	}
 }

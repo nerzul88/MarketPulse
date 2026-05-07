@@ -46,6 +46,12 @@ final class AssetsListViewModel {
 		self.fetchAssetsUseCase = fetchAssetsUseCase
 	}
 
+	deinit {
+		searchTask?.cancel()
+		initialLoadTask?.cancel()
+		paginationTask?.cancel()
+	}
+
 	// MARK: - Actions
 
 	func loadAssets() {
@@ -64,7 +70,6 @@ final class AssetsListViewModel {
 		canLoadMore = true
 		onStateChanged?(.loading)
 
-		initialLoadTask?.cancel()
 		initialLoadTask = Task {
 			do {
 				let response = try await fetchAssetsUseCase.execute(page: 1, limit: pageSize)
@@ -103,13 +108,14 @@ final class AssetsListViewModel {
 		paginationTask?.cancel()
 		paginationTask = Task {
 			do {
-				let nextPage = currentPage + 1
-				let response = try await fetchAssetsUseCase.execute(page: nextPage, limit: pageSize)
+				let requestedPage = currentPage + 1
+				let response = try await fetchAssetsUseCase.execute(page: requestedPage, limit: pageSize)
 				guard !Task.isCancelled else { return }
+				guard requestedPage == self.currentPage + 1 else { return }
 				self.allAssets.append(contentsOf: response.assets)
 				self.lastUpdated = response.lastUpdated
 				self.isShowingCachedData = response.isFromCache
-				self.currentPage = response.page
+				self.currentPage = requestedPage
 				self.canLoadMore = response.canLoadMore && !response.isFromCache
 				self.setPaginationLoading(false)
 				self.paginationTask = nil
