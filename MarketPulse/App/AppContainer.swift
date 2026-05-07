@@ -53,44 +53,23 @@ final class AppContainer {
 
 	// MARK: - Factories
 
-	func makeRootViewController() -> UIViewController {
-		let marketNavigationController = UINavigationController(rootViewController: makeAssetsListScreen())
-		let favoritesNavigationController = UINavigationController(rootViewController: makeFavoritesScreen())
-
-		marketNavigationController.tabBarItem = UITabBarItem(
-			title: "Market",
-			image: UIImage(systemName: "chart.line.uptrend.xyaxis"),
-			selectedImage: UIImage(systemName: "chart.line.uptrend.xyaxis")
-		)
-
-		favoritesNavigationController.tabBarItem = UITabBarItem(
-			title: "Favorites",
-			image: UIImage(systemName: "star"),
-			selectedImage: UIImage(systemName: "star.fill")
-		)
-
-		let tabBarController = UITabBarController()
-		tabBarController.viewControllers = [marketNavigationController, favoritesNavigationController]
-		return tabBarController
-	}
-
-	func makeAssetsListScreen() -> UIViewController {
+	func makeAssetsListScreen(
+		onAssetSelected: @escaping (Asset) -> Void
+	) -> UIViewController {
 		let viewModel = AssetsListViewModel(fetchAssetsUseCase: fetchAssetsUseCase)
 		return AssetsListViewController(
 			viewModel: viewModel,
-			makeAssetDetailViewController: { asset in
-				self.makeAssetDetailScreen(asset: asset)
-			}
+			onAssetSelected: onAssetSelected
 		)
 	}
 
-	func makeFavoritesScreen() -> UIViewController {
+	func makeFavoritesScreen(
+		onAssetSelected: @escaping (Asset) -> Void
+	) -> UIViewController {
 		let viewModel = FavoritesViewModel(fetchFavoritesUseCase: fetchFavoritesUseCase)
 		return FavoritesViewController(
 			viewModel: viewModel,
-			makeAssetDetailViewController: { asset in
-				self.makeAssetDetailScreen(asset: asset)
-			}
+			onAssetSelected: onAssetSelected
 		)
 	}
 

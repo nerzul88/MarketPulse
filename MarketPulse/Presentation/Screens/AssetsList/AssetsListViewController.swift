@@ -10,7 +10,7 @@ import UIKit
 final class AssetsListViewController: UIViewController {
 
 	private let viewModel: AssetsListViewModel
-	private let makeAssetDetailViewController: (Asset) -> UIViewController
+	private let onAssetSelected: (Asset) -> Void
 	private let tableView: UITableView = {
 		let tableView = UITableView()
 		tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -98,10 +98,10 @@ final class AssetsListViewController: UIViewController {
 
 	init(
 		viewModel: AssetsListViewModel,
-		makeAssetDetailViewController: @escaping (Asset) -> UIViewController
+		onAssetSelected: @escaping (Asset) -> Void
 	) {
 		self.viewModel = viewModel
-		self.makeAssetDetailViewController = makeAssetDetailViewController
+		self.onAssetSelected = onAssetSelected
 		super.init(nibName: nil, bundle: nil)
 	}
 
@@ -315,8 +315,7 @@ extension AssetsListViewController: UITableViewDataSource {
 extension AssetsListViewController: UITableViewDelegate {
 	func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
 		let asset = assets[indexPath.row]
-		let viewController = makeAssetDetailViewController(asset)
-		navigationController?.pushViewController(viewController, animated: true)
+		onAssetSelected(asset)
 	}
 
 	func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {

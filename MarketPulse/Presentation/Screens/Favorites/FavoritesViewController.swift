@@ -10,7 +10,7 @@ import UIKit
 final class FavoritesViewController: UIViewController {
 
 	private let viewModel: FavoritesViewModel
-	private let makeAssetDetailViewController: (Asset) -> UIViewController
+	private let onAssetSelected: (Asset) -> Void
 
 	private let tableView: UITableView = {
 		let tableView = UITableView()
@@ -32,10 +32,10 @@ final class FavoritesViewController: UIViewController {
 
 	init(
 		viewModel: FavoritesViewModel,
-		makeAssetDetailViewController: @escaping (Asset) -> UIViewController
+		onAssetSelected: @escaping (Asset) -> Void
 	) {
 		self.viewModel = viewModel
-		self.makeAssetDetailViewController = makeAssetDetailViewController
+		self.onAssetSelected = onAssetSelected
 		super.init(nibName: nil, bundle: nil)
 	}
 
@@ -157,7 +157,6 @@ extension FavoritesViewController: UITableViewDelegate {
 			change24h: favorite.change24h
 		)
 
-		let viewController = makeAssetDetailViewController(asset)
-		navigationController?.pushViewController(viewController, animated: true)
+		onAssetSelected(asset)
 	}
 }
